@@ -98,6 +98,11 @@ def expand_world(worlddir, include, exclude=None, verbose=False):
         leveldat.write_file(leveldat_path)
         
         run_server(verbose)
+    
+    # reset spawn point 
+    leveldat["Data"]["SpawnX"].value = spawn_x
+    leveldat["Data"]["SpawnZ"].value = spawn_z
+    leveldat.write_file(leveldat_path)
 
 def bounds(s):
     try:
