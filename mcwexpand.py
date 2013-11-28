@@ -55,7 +55,7 @@ def run_server(verbose=False):
     else:
         p.wait()
 
-def expand_world(worlddir, bounds, verbose=False):
+def expand_world(worlddir, include, exclude=None, verbose=False):
     server = os.path.join(os.path.dirname(__file__), "server")
     template = os.path.join(server, "server.properties.tpl")
     template_to = os.path.join(server, "server.properties")
@@ -73,13 +73,15 @@ def expand_world(worlddir, bounds, verbose=False):
     spawn_z = leveldat["Data"]["SpawnZ"].value
     print "Found original spawn point: %d:%d" % (spawn_x, spawn_z)
     
-    include = list(iterate_bounds(bounds))
-    print "Doing %d iterations..." % len(include)
+    positions = set(iterate_bounds(include))
+    if exclude is not None: 
+        positions -= set(iterate_bounds(exclude))
+    print "Doing %d iterations..." % len(positions)
     i = 0
-    for dx, dz in include:
+    for dx, dz in positions:
         i += 1
         
-        print "[%d/%d] Generating %d, %d ..." % (i, len(include), dx, dz)
+        print "[%d/%d] Generating %d, %d ..." % (i, len(positions), dx, dz)
         leveldat["Data"]["SpawnX"].value = spawn_x + dx*ITERATION_BLOCK_OFFSET
         leveldat["Data"]["SpawnZ"].value = spawn_z + dz*ITERATION_BLOCK_OFFSET
         leveldat.write_file(leveldat_path)
@@ -100,7 +102,8 @@ if __name__ == "__main__":
                         help="size of the world in iterations, " 
                         + "of the format 'minX:minZ:maxX:maxZ', "
                         + "for example: '-4,-4,4,4'")
+    parser.add_argument("--exclude", metavar="<bounds>", type=bounds, default=None)
     parser.add_argument("worlddir")
     args = parser.parse_args()
     
-    expand_world(args.worlddir, args.include, args.verbose)
+    expand_world(args.worlddir, args.include, args.exclude, args.verbose)
