@@ -10,6 +10,9 @@ from nbt import nbt
 # we use a small tolerance
 ITERATION_BLOCK_OFFSET = 24 * 16
 
+# add an option for this later
+LOGFILE = os.path.join(os.path.dirname(__file__), "mcwexpand.log")
+
 def copy_template(template, template_to, template_vars={}):
     to = open(template_to, "w")
     data = open(template).read()
@@ -43,18 +46,20 @@ def run_server(verbose=False):
          "stderr" : subprocess.PIPE, 
          "stdin" : subprocess.PIPE
     }
-    p = subprocess.Popen(["java", "-jar", "minecraft_server.jar", "nogui"], **kwargs)
     
+    log = open(LOGFILE, "a")
+    p = subprocess.Popen(["java", "-jar", "minecraft_server.jar", "nogui"], **kwargs)
     p.stdin.write("stop\n")
-    if verbose:
-        while 42:
-            line = p.stdout.readline()
-            if not line:
-                break
-            line = line.rstrip()
+    while 42:
+        line = p.stdout.readline()
+        if not line:
+            break
+        line = line.rstrip()
+        print >> log, line
+        if verbose:
             print line
-    else:
-        p.wait()
+    print >> log, ""
+    log.close()
 
 def write_server_config(worlddir, seed):
     server = os.path.join(os.path.dirname(__file__), "server")
@@ -115,4 +120,6 @@ if __name__ == "__main__":
     
     write_server_config(args.worlddir, args.seed)
     
+    # empty log file
+    open(LOGFILE, "w").close()
     expand_world(args.worlddir, args.include, args.exclude, args.verbose)
