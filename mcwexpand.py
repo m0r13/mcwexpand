@@ -56,15 +56,17 @@ def run_server(verbose=False):
     else:
         p.wait()
 
-def expand_world(worlddir, include, exclude=None, verbose=False):
+def write_server_config(worlddir, seed):
     server = os.path.join(os.path.dirname(__file__), "server")
     template = os.path.join(server, "server.properties.tpl")
     template_to = os.path.join(server, "server.properties")
     template_vars = {
-        "level-name" : os.path.relpath(worlddir, server)
+        "level-name" : os.path.relpath(worlddir, server),
+        "level-seed" : seed
     }
     copy_template(template, template_to, template_vars)
-    
+
+def expand_world(worlddir, include, exclude=None, verbose=False):    
     print "Running server for the first time..."
     run_server(verbose)
     
@@ -107,7 +109,10 @@ if __name__ == "__main__":
                         + "of the format 'minX:minZ:maxX:maxZ', "
                         + "for example: '-4,-4,4,4'")
     parser.add_argument("--exclude", metavar="<bounds>", type=bounds, default=None)
+    parser.add_argument("--seed", metavar="<seed>", default="")
     parser.add_argument("worlddir")
     args = parser.parse_args()
+    
+    write_server_config(args.worlddir, args.seed)
     
     expand_world(args.worlddir, args.include, args.exclude, args.verbose)
