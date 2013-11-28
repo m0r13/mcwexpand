@@ -3,6 +3,7 @@
 import os
 import argparse
 import subprocess
+import shutil
 from nbt import nbt
 
 # server generates at the start 25x25 chunks
@@ -68,6 +69,9 @@ def expand_world(worlddir, include, exclude=None, verbose=False):
     run_server(verbose)
     
     leveldat_path = os.path.join(worlddir, "level.dat")
+    # create a backup of the level.dat
+    shutil.copy(leveldat_path, leveldat_path + ".mcexpandbak")
+    
     leveldat = nbt.NBTFile(filename=leveldat_path)
     spawn_x = leveldat["Data"]["SpawnX"].value
     spawn_z = leveldat["Data"]["SpawnZ"].value
