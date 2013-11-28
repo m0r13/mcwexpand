@@ -67,8 +67,9 @@ def write_server_config(worlddir, seed):
     template_to = os.path.join(server, "server.properties")
     template_vars = {
         "level-name" : os.path.relpath(worlddir, server),
-        "level-seed" : seed
     }
+    if seed is not None:
+        template_vars["level-seed"] = seed
     copy_template(template, template_to, template_vars)
 
 def expand_world(worlddir, include, exclude=None, verbose=False):    
@@ -119,7 +120,7 @@ if __name__ == "__main__":
                         + "of the format 'minX:minZ:maxX:maxZ', "
                         + "for example: '-4,-4,4,4'")
     parser.add_argument("--exclude", metavar="<bounds>", type=bounds, default=None)
-    parser.add_argument("--seed", metavar="<seed>", default="")
+    parser.add_argument("--seed", metavar="<seed>", default=None)
     parser.add_argument("worlddir")
     args = parser.parse_args()
     
