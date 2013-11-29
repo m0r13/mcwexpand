@@ -86,6 +86,7 @@ def expand_world(worlddir, include, exclude=None, verbose=False):
     print "Found original spawn point: %d:%d" % (spawn_x, spawn_z)
     
     positions = set(iterate_bounds(include))
+    positions = sorted(list(positions))
     if exclude is not None: 
         positions -= set(iterate_bounds(exclude))
     print "Doing %d iterations..." % len(positions)
