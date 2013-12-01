@@ -86,9 +86,9 @@ def expand_world(worlddir, include, exclude=None, verbose=False):
     print "Found original spawn point: %d:%d" % (spawn_x, spawn_z)
     
     positions = set(iterate_bounds(include))
-    positions = sorted(list(positions))
     if exclude is not None: 
         positions -= set(iterate_bounds(exclude))
+    positions = sorted(list(positions))
     print "Doing %d iterations..." % len(positions)
     i = 0
     for dx, dz in positions:
@@ -122,6 +122,7 @@ if __name__ == "__main__":
                         + "for example: '-4,-4,4,4'")
     parser.add_argument("--exclude", metavar="<bounds>", type=bounds, default=None)
     parser.add_argument("--seed", metavar="<seed>", default=None)
+    parser.add_argument("--server-port", metavar="<server-port>", default=9521)
     parser.add_argument("worlddir")
     args = parser.parse_args()
     
