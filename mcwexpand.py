@@ -1,17 +1,26 @@
 #!/usr/bin/env python2
 
-import os
 import argparse
-import subprocess
+import os
+from os.path import join, dirname
+import random
 import shutil
+import string
+import subprocess
+import time
+
 from nbt import nbt
+
 
 # server generates at the start 25x25 chunks
 # we use a small tolerance
 ITERATION_BLOCK_OFFSET = 24 * 16
 
 # add an option for this later
-LOGFILE = os.path.join(os.path.dirname(__file__), "mcwexpand.log")
+LOGFILE = join(dirname(__file__), "mcwexpand.log")
+
+def random_string(length, chars=string.ascii_lowercase):
+    return "".join([ random.choice(chars) for i in xrange(length)])
 
 def copy_template(template, template_to, template_vars={}):
     to = open(template_to, "w")
@@ -39,44 +48,54 @@ def iterate_bounds(bounds):
                 continue
             yield dx, dz
 
-def run_server(verbose=False):
-    kwargs = {
-         "cwd" : os.path.join(os.path.dirname(__file__), "server"), 
-         "stdout" : subprocess.PIPE, 
-         "stderr" : subprocess.PIPE, 
-         "stdin" : subprocess.PIPE
-    }
+class Server(object):
+    def __init__(self, serverdir, worlddir, seed=None):
+        self.serverdir = serverdir
+        
+        self.worlddir = worlddir
+        self.seed = seed
     
-    log = open(LOGFILE, "a")
-    p = subprocess.Popen(["java", "-jar", "minecraft_server.jar", "nogui"], **kwargs)
-    p.stdin.write("stop\n")
-    while 42:
-        line = p.stdout.readline()
-        if not line:
-            break
-        line = line.rstrip()
-        print >> log, line
-        if verbose:
-            print line
-    print >> log, ""
-    log.close()
+    def create_serverdir(self, templatedir):
+        os.mkdir(self.serverdir)
+        shutil.copy(join(templatedir, "server.properties.tpl"), join(self.serverdir, "server.properties.tpl"))
+        shutil.copy(join(templatedir, "minecraft_server.jar"), join(self.serverdir, "minecraft_server.jar"))
+    
+        template = join(self.serverdir, "server.properties.tpl")
+        template_to = join(self.serverdir, "server.properties")
+        template_vars = {
+            "level-name" : os.path.relpath(self.worlddir, self.serverdir),
+        }
+        if self.seed is not None:
+            template_vars["level-seed"] = self.seed
+        copy_template(template, template_to, template_vars)
+    
+    def run(self, verbose=False):
+        kwargs = {
+             "cwd" : self.serverdir, #join(dirname(__file__), "server"), 
+             "stdout" : subprocess.PIPE, 
+             "stderr" : subprocess.PIPE, 
+             "stdin" : subprocess.PIPE
+        }
+        
+        log = open(LOGFILE, "a")
+        p = subprocess.Popen(["java", "-jar", "minecraft_server.jar", "nogui"], **kwargs)
+        p.stdin.write("stop\n")
+        while 42:
+            line = p.stdout.readline()
+            if not line:
+                break
+            line = line.rstrip()
+            print >> log, line
+            if verbose:
+                print line
+        print >> log, ""
+        log.close()
 
-def write_server_config(worlddir, seed):
-    server = os.path.join(os.path.dirname(__file__), "server")
-    template = os.path.join(server, "server.properties.tpl")
-    template_to = os.path.join(server, "server.properties")
-    template_vars = {
-        "level-name" : os.path.relpath(worlddir, server),
-    }
-    if seed is not None:
-        template_vars["level-seed"] = seed
-    copy_template(template, template_to, template_vars)
-
-def expand_world(worlddir, include, exclude=None, verbose=False):    
+def expand_world(server, include, exclude=None, verbose=False):    
     print "Running server for the first time..."
-    run_server(verbose)
+    server.run(verbose)
     
-    leveldat_path = os.path.join(worlddir, "level.dat")
+    leveldat_path = join(server.worlddir, "level.dat")
     # create a backup of the level.dat
     shutil.copy(leveldat_path, leveldat_path + ".mcexpandbak")
     
@@ -99,7 +118,7 @@ def expand_world(worlddir, include, exclude=None, verbose=False):
         leveldat["Data"]["SpawnZ"].value = spawn_z + dz*ITERATION_BLOCK_OFFSET
         leveldat.write_file(leveldat_path)
         
-        run_server(verbose)
+        server.run(verbose)
     
     # reset spawn point 
     leveldat["Data"]["SpawnX"].value = spawn_x
@@ -126,8 +145,12 @@ if __name__ == "__main__":
     parser.add_argument("worlddir")
     args = parser.parse_args()
     
-    write_server_config(args.worlddir, args.seed)
+    serverdir = join("/tmp", "mcwexpand-%d-%s" % (time.time(), random_string(6)))
+    server = Server(serverdir, args.worlddir, args.seed)
+    server.create_serverdir(join(dirname(__file__), "server"))
+    
+    print "Using %s as server directory" % serverdir
     
     # empty log file
     open(LOGFILE, "w").close()
-    expand_world(args.worlddir, args.include, args.exclude, args.verbose)
+    expand_world(server, args.include, args.exclude, args.verbose)
