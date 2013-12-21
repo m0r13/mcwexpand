@@ -49,8 +49,9 @@ def iterate_bounds(bounds):
             yield dx, dz
 
 class Server(object):
-    def __init__(self, serverdir, worlddir, seed=None):
+    def __init__(self, serverdir, serverport, worlddir, seed=None):
         self.serverdir = serverdir
+        self.serverport = serverport
         
         self.worlddir = worlddir
         self.seed = seed
@@ -64,6 +65,7 @@ class Server(object):
         template_to = join(self.serverdir, "server.properties")
         template_vars = {
             "level-name" : os.path.relpath(self.worlddir, self.serverdir),
+            "server-port" : str(self.serverport),
         }
         if self.seed is not None:
             template_vars["level-seed"] = self.seed
@@ -146,9 +148,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     serverdir = join("/tmp", "mcwexpand-%d-%s" % (time.time(), random_string(6)))
-    server = Server(serverdir, args.worlddir, args.seed)
+    server = Server(serverdir, args.server_port, args.worlddir, args.seed)
     server.create_serverdir(join(dirname(__file__), "server"))
-    
+   
     print "Using %s as server directory" % serverdir
     
     # empty log file
