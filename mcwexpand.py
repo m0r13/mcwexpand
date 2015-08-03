@@ -59,6 +59,7 @@ class Server(object):
     def create_serverdir(self, templatedir):
         os.mkdir(self.serverdir)
         shutil.copy(join(templatedir, "server.properties.tpl"), join(self.serverdir, "server.properties.tpl"))
+        shutil.copy(join(templatedir, "eula.txt"), join(self.serverdir, "eula.txt"))
         shutil.copy(join(templatedir, "minecraft_server.jar"), join(self.serverdir, "minecraft_server.jar"))
     
         template = join(self.serverdir, "server.properties.tpl")
